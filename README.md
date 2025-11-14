@@ -122,11 +122,29 @@ lib/
 
 ### 📸 Screenshots
 
-Screen	Image
-Login	(upload screenshot)
-Register	(upload screenshot)
-Home	(upload screenshot)
-Create Task	(upload screenshot)
+#### Login Screen:
+![alt text](image-1.png)
+
+#### Register Screen:
+![alt text](image.png)
+
+#### Home Screen
+![alt text](image-4.png)
+
+#### Create Task Screen:
+![alt text](image-3.png)
+
+#### Edit Task Screen:
+![alt text](image-5.png)
+
+#### Marking Task as Completed
+![alt text](image-6.png)
+
+#### Delete Task Screen
+![alt text](image-7.png)
+
+#### Logout Successful Screen
+![alt text](image-8.png)
 
 ### 🎥 Demo Video
 Youtube link: 
