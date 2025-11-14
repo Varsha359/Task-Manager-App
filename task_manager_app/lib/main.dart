@@ -5,7 +5,7 @@ import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
- 
+
   await Parse().initialize(
     AppConstants.appId,
     AppConstants.serverUrl,
@@ -24,9 +24,13 @@ class TaskManagerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Task Manager',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const LoginScreen(),
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Colors.blue,
+        brightness: Brightness.light,
+      ),
+      home: const LoginScreen(),
     );
   }
 }

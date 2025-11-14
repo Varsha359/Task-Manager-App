@@ -3,7 +3,6 @@ import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
 class TaskFormScreen extends StatefulWidget {
   final ParseObject? task;
-
   const TaskFormScreen({super.key, this.task});
 
   @override
@@ -18,64 +17,53 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   @override
   void initState() {
     super.initState();
-
     if (widget.task != null) {
       titleController.text = widget.task!.get<String>('title') ?? '';
       descController.text = widget.task!.get<String>('description') ?? '';
     }
   }
 
-  // ------------------------
-  // SAVE TASK (Create or Update)
-  // ------------------------
   Future<void> saveTask() async {
     final title = titleController.text.trim();
     final desc = descController.text.trim();
 
     if (title.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Title required")));
+          .showSnackBar(const SnackBar(content: Text("Title is required")));
       return;
     }
 
     setState(() => loading = true);
 
     if (widget.task == null) {
-      // ------------------
-      // CREATE NEW TASK
-      // ------------------
       final user = await ParseUser.currentUser();
 
       final task = ParseObject('Task')
         ..set('title', title)
         ..set('description', desc)
-        ..set('user', user)     // IMPORTANT FIX
-        ..set('isDone', false); // Default value
+        ..set('user', user)
+        ..set('isDone', false);
 
       final response = await task.save();
       setState(() => loading = false);
 
       if (response.success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Task created")),
+          const SnackBar(content: Text("Task created successfully")),
         );
         Navigator.pop(context);
       }
-
     } else {
-      // ------------------
-      // UPDATE EXISTING TASK
-      // ------------------
-      final task = widget.task!
+      widget.task!
         ..set('title', title)
         ..set('description', desc);
 
-      final response = await task.save();
+      final response = await widget.task!.save();
       setState(() => loading = false);
 
       if (response.success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Task updated")),
+          const SnackBar(content: Text("Task updated successfully")),
         );
         Navigator.pop(context);
       }
@@ -84,28 +72,48 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isEdit = widget.task != null;
+    final editing = widget.task != null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? "Edit Task" : "New Task")),
+      appBar: AppBar(
+        title: Text(editing ? "Edit Task" : "New Task"),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(labelText: "Task Title"),
+              decoration: InputDecoration(
+                labelText: "Task Title",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: descController,
-              decoration: const InputDecoration(labelText: "Description"),
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: "Description",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 25),
+
             loading
                 ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: saveTask,
-                    child: Text(isEdit ? "Update" : "Create"),
+                : SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.save),
+                      label: Text(editing ? "Update Task" : "Create Task"),
+                      onPressed: saveTask,
+                    ),
                   ),
           ],
         ),

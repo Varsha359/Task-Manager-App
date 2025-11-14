@@ -27,9 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => loading = true);
 
     final user = await ParseUser.currentUser();
-
     final query = QueryBuilder<ParseObject>(ParseObject('Task'))
-      ..whereEqualTo('user', user)     // IMPORTANT FIX
+      ..whereEqualTo('user', user)
       ..orderByDescending('createdAt');
 
     final response = await query.query();
@@ -51,10 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (response.success) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Task deleted")));
-      loadTasks(); // Refresh list
+      loadTasks();
     } else {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Delete failed")));
+          .showSnackBar(const SnackBar(content: Text("Failed to delete task")));
     }
   }
 
@@ -65,6 +64,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = await ParseUser.currentUser();
     await user?.logout();
 
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text("Logged out successfully")));
+
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -72,88 +74,149 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // CONFIRM DELETE DIALOG
+  // ------------------------
+  // CONFIRM DELETE
+  // ------------------------
   void confirmDelete(ParseObject task) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete task?'),
-        content: const Text('This action cannot be undone.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text(
+          'Delete Task',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text('Are you sure you want to delete this task?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               Navigator.pop(context);
               deleteTask(task);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          )
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
   }
 
+  // ------------------------
+  // UI
+  // ------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("My Tasks"),
+        elevation: 2,
+        centerTitle: true,
+        title: const Text(
+          "My Tasks",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
-          IconButton(
-            onPressed: logout,
-            icon: const Icon(Icons.logout),
-          )
+          IconButton(icon: const Icon(Icons.logout), onPressed: logout),
         ],
       ),
 
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.add),
+        label: const Text("Add Task"),
         onPressed: () async {
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const TaskFormScreen()),
           );
-          loadTasks(); // Refresh after returning
+          loadTasks();
         },
-        child: const Icon(Icons.add),
       ),
 
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : tasks.isEmpty
-              ? const Center(child: Text("No tasks yet. Tap + to add."))
+              ? const Center(
+                  child: Text(
+                    "No tasks yet.\nTap + to add one.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w500),
+                  ),
+                )
               : RefreshIndicator(
                   onRefresh: loadTasks,
                   child: ListView.builder(
+                    padding: const EdgeInsets.all(12),
                     itemCount: tasks.length,
                     itemBuilder: (context, index) {
                       final task = tasks[index];
                       final title = task.get<String>('title') ?? '';
-                      final desc =
-                          task.get<String>('description') ?? '';
+                      final desc = task.get<String>('description') ?? '';
                       final isDone = task.get<bool>('isDone') ?? false;
 
                       return Card(
+                        elevation: 3,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         child: ListTile(
-                          leading: Icon(
-                            isDone ? Icons.check_circle : Icons.circle_outlined,
-                            color: isDone ? Colors.green : Colors.grey,
-                          ),
-                          title: Text(title),
-                          subtitle: Text(desc),
+                          contentPadding: const EdgeInsets.all(16),
 
+                          // ✔ CHECKBOX WITH SNACKBAR FEEDBACK
+                          leading: Checkbox(
+                            value: isDone,
+                            onChanged: (value) async {
+                              task.set('isDone', value);
+                              await task.save();
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    value == true
+                                        ? "Task marked as completed"
+                                        : "Task marked as incomplete",
+                                  ),
+                                ),
+                              );
+
+                              setState(() {});
+                            },
+                          ),
+
+                          title: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              decoration:
+                                  isDone ? TextDecoration.lineThrough : null,
+                              color: isDone ? Colors.grey : Colors.black,
+                            ),
+                          ),
+                          subtitle: Text(
+                            desc,
+                            style: TextStyle(
+                              fontSize: 14,
+                              decoration:
+                                  isDone ? TextDecoration.lineThrough : null,
+                              color: isDone
+                                  ? Colors.grey.shade600
+                                  : Colors.black87,
+                            ),
+                          ),
+
+                          // EDIT
                           onTap: () async {
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => TaskFormScreen(task: task),
-                              ),
+                                  builder: (_) => TaskFormScreen(task: task)),
                             );
-                            loadTasks(); // Refresh after editing
+                            loadTasks();
                           },
 
+                          // DELETE
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () => confirmDelete(task),
