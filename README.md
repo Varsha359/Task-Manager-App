@@ -89,14 +89,13 @@ flutter pub get
 ```
 ### 3️⃣ Configure Back4App
 
-Inside main.dart, update:
+Inside back4app_config.dart, update:
 ```sh
-Parse().initialize(
-  'YOUR_APP_ID',
-  'https://parseapi.back4app.com',
-  clientKey: 'YOUR_CLIENT_KEY',
-  autoSendSessionId: true,
-);
+class AppConstants {
+  static const String appId = "your app id";
+  static const String clientKey = "your client id";
+  static const String serverUrl = "https://parseapi.back4app.com";
+};
 ```
 You can find these keys in:
 
@@ -117,7 +116,7 @@ lib/
 │     ├── register_screen.dart
 │     ├── home_screen.dart
 │     └── task_form_screen.dart
-└── widgets/ (optional)
+└── utils/ back4app_config.dart
 ```
 
 ### 📸 Screenshots
